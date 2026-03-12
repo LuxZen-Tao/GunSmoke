@@ -16,12 +16,6 @@ public class LevelManager {
     }
 
     public void reset() {
-        currentWave = 1;
-        activeTargets = new ArrayList<>();
-        currentState = GameState.WAITING;
-    }
-
-    public void reset() {
         this.currentWave = 1;
         this.activeTargets = new ArrayList<>();
         this.currentState = GameState.WAITING;

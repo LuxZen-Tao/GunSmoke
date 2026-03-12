@@ -4,9 +4,13 @@ import javafx.animation.AnimationTimer;
 import javafx.stage.Stage;
 import uk.gnosisstudios.MidnightCaliber.UI.GameView;
 import uk.gnosisstudios.MidnightCaliber.UI.MainMenuView;
+import uk.gnosisstudios.MidnightCaliber.sim.Caliber;
 import uk.gnosisstudios.MidnightCaliber.sim.LevelManager;
+import uk.gnosisstudios.MidnightCaliber.sim.Magazine;
 import uk.gnosisstudios.MidnightCaliber.sim.Pistol;
 import uk.gnosisstudios.MidnightCaliber.sim.Player;
+import uk.gnosisstudios.MidnightCaliber.sim.ShotResult;
+import uk.gnosisstudios.MidnightCaliber.sim.Target;
 
 public class GameController {
     private final Stage stage;
@@ -17,6 +21,7 @@ public class GameController {
     // Logic Model components
     private final Player player;
     private final LevelManager levelManager;
+    private final Target trainingTarget = new Target("Range Target", 100_000, false);
 
     // Game state
     private int score = 0;
@@ -30,6 +35,7 @@ public class GameController {
 
         this.player = new Player("Operator");
         this.player.setGun(new Pistol());
+        reloadPlayerMagazine();
         this.levelManager = new LevelManager();
         this.levelManager.setPlayer(player);
 
@@ -68,12 +74,23 @@ public class GameController {
             return;
         }
 
-        ammo--;
-        gameView.updateAmmo(ammo);
-
         boolean hitViewTarget = gameView.isTargetHit(mouseX, mouseY);
-        boolean hitSimTarget = levelManager.processPlayerShot(50);
+        ShotResult shotResult = player.pullTrigger(hitViewTarget ? trainingTarget : null);
+        syncAmmoFromPlayer();
 
+        if (shotResult.isOutOfAmmo()) {
+            gameView.showMessage("Out of ammo! Reload!");
+            gameView.render();
+            return;
+        }
+
+        if (shotResult.isJammed()) {
+            gameView.showMessage("Weapon jammed!");
+            gameView.render();
+            return;
+        }
+
+        boolean hitSimTarget = shotResult.isHit() && levelManager.processPlayerShot(shotResult.getDamage());
         if (hitViewTarget && hitSimTarget) {
             score += 10;
             gameView.updateScore(score);
@@ -106,8 +123,8 @@ public class GameController {
 
     private void resetStateForNewRun() {
         score = 0;
-        ammo = maxAmmo;
         levelManager.reset();
+        reloadPlayerMagazine();
     }
 
     private void returnToMenu() {
@@ -125,8 +142,8 @@ public class GameController {
 
     private void resetScore() {
         score = 0;
-        ammo = maxAmmo;
         levelManager.reset();
+        reloadPlayerMagazine();
         gameView.updateScore(score);
         gameView.updateAmmo(ammo);
         gameView.showMessage("Game reset!");
@@ -138,9 +155,33 @@ public class GameController {
     }
 
     private void reloadAmmo() {
-        ammo = maxAmmo;
+        reloadPlayerMagazine();
         gameView.updateAmmo(ammo);
         gameView.showMessage("Reloaded!");
         gameView.render();
+    }
+
+    private void reloadPlayerMagazine() {
+        if (player.getEquippedGun() == null) {
+            ammo = 0;
+            return;
+        }
+
+        Caliber caliber = player.getEquippedGun().getCaliber();
+        Magazine magazine = new Magazine(maxAmmo, caliber);
+        while (!magazine.isFull()) {
+            magazine.loadBullet(caliber);
+        }
+        player.reloadGun(magazine);
+        syncAmmoFromPlayer();
+    }
+
+    private void syncAmmoFromPlayer() {
+        if (player.getEquippedGun() != null && player.getEquippedGun().getMagazine() != null) {
+            ammo = player.getEquippedGun().getMagazine().getBulletCount();
+        } else {
+            ammo = 0;
+        }
+        gameView.updateAmmo(ammo);
     }
 }
