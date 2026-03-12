@@ -1,11 +1,14 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
 public class Civilian extends Target {
+    public Civilian() {
+        super("Civilian", 1, false);
+    }
+
     @Override
-    public void onHit(int damage) {
-        System.out.println("DANGER: Civilian hit! Penalty to score applied.");
-        this.setVisible(false); // They run away
+    public void takeDamage(int damage) {
+        if (damage > 0) {
+            super.takeDamage(getHealth(), 1.0);
+        }
     }
 }
-
-

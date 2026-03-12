@@ -1,11 +1,13 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
-public class Bullet
-{
-    String caliber;
+public class Bullet {
+    private final Caliber caliber;
 
-    public Bullet(String caliber){
+    public Bullet(Caliber caliber) {
         this.caliber = caliber;
     }
 
+    public Caliber getCaliber() {
+        return caliber;
+    }
 }

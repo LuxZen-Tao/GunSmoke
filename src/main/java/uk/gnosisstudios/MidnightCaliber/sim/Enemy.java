@@ -1,12 +1,24 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
-public abstract class Enemy extends Target {
-    protected int threatLevel; // 1 (Low) to 5 (High)
+public class Enemy extends Target {
+    private final int threatLevel;
 
-    public Enemy(int health, int threatLevel) {
-        this.health = health;
+    public Enemy(String name, int health, int threatLevel) {
+        super(name, health, true);
         this.threatLevel = threatLevel;
     }
 
-    public abstract void attack(Player p);
+    public int getThreatLevel() {
+        return threatLevel;
+    }
+
+    public int attackDamage() {
+        return 10 + (threatLevel * 3);
+    }
+
+    public void attack(Player player) {
+        if (player != null && isAlive()) {
+            player.takeDamage(attackDamage());
+        }
+    }
 }

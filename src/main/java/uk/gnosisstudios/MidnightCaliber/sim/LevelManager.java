@@ -4,16 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LevelManager {
-    public boolean processPlayerShot(int damage) {
-        for (Target t : activeTargets) {
-            if (t.isVisible()) {
-                t.onHit(damage);
-                return true;
-            }
-        }
-        return false;
-    }
-
     public enum GameState { WAITING, IN_COMBAT, WAVE_CLEARED, GAME_OVER }
 
     private int currentWave = 1;
@@ -21,7 +11,15 @@ public class LevelManager {
     private GameState currentState = GameState.WAITING;
     private Player player;
 
-    public void setPlayer(Player p) { this.player = p; }
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
+    public void reset() {
+        currentWave = 1;
+        activeTargets = new ArrayList<>();
+        currentState = GameState.WAITING;
+    }
 
     public void reset() {
         this.currentWave = 1;
@@ -30,40 +28,53 @@ public class LevelManager {
     }
 
     public void startWave() {
-        this.activeTargets = new ArrayList<>();
-        // Example: Add targets based on wave difficulty
+        activeTargets = new ArrayList<>();
         for (int i = 0; i < currentWave; i++) {
             activeTargets.add(new HighThreatEnemy());
         }
-        this.currentState = GameState.IN_COMBAT;
-        System.out.println("Wave " + currentWave + " started!");
+        currentState = GameState.IN_COMBAT;
+    }
+
+    public boolean processPlayerShot(int damage) {
+        for (Target target : activeTargets) {
+            if (target.isAlive()) {
+                target.takeDamage(damage);
+                return true;
+            }
+        }
+        return false;
     }
 
     public void update() {
-        if (currentState != GameState.IN_COMBAT) return;
+        if (currentState != GameState.IN_COMBAT) {
+            return;
+        }
 
-        // Logic for enemies attacking the player
-        for (Target t : activeTargets) {
-            if (t instanceof Enemy && t.isVisible()) {
-                ((Enemy) t).attack(player);
+        if (player != null && player.isAlive()) {
+            for (Target target : activeTargets) {
+                if (target instanceof Enemy enemy && enemy.isAlive()) {
+                    enemy.attack(player);
+                }
             }
         }
 
-        // Cleanup defeated targets
-        activeTargets.removeIf(t -> !t.isVisible());
+        activeTargets.removeIf(t -> !t.isAlive());
 
-        // Check if wave is cleared
         if (activeTargets.isEmpty()) {
-            this.currentState = GameState.WAVE_CLEARED;
-            completeWave();
+            currentState = GameState.WAVE_CLEARED;
+            currentWave++;
+        }
+
+        if (player != null && !player.isAlive()) {
+            currentState = GameState.GAME_OVER;
         }
     }
 
-    private void completeWave() {
-        System.out.println("Wave " + currentWave + " cleared.");
-        this.currentWave++;
+    public GameState getCurrentState() {
+        return currentState;
     }
 
-    public GameState getCurrentState() { return currentState; }
-    public List<Target> getActiveTargets() { return activeTargets; }
+    public List<Target> getActiveTargets() {
+        return activeTargets;
+    }
 }

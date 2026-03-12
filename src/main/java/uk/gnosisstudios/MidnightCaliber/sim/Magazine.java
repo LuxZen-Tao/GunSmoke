@@ -1,32 +1,55 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
-
 import java.util.Stack;
 
 public class Magazine {
-    private int capacity;
-    private Stack<Bullet> bullets;
-    private String caliber;
+    private final int capacity;
+    private final Stack<Bullet> bullets;
+    private final Caliber caliber;
 
-    public Magazine(int capacity, String caliber) {
+    public Magazine(int capacity, Caliber caliber) {
         this.capacity = capacity;
         this.caliber = caliber;
         this.bullets = new Stack<>();
     }
 
-    public void loadBullet(Bullet bullet) {
-        if (bullets.size() < capacity && bullet.caliber.equals(this.caliber)) {
-            bullets.push(bullet);
-        } else {
-            System.out.println("Cannot load: Magazine full or caliber mismatch!");
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public int getBulletCount() {
+        return bullets.size();
+    }
+
+    public Caliber getCaliber() {
+        return caliber;
+    }
+
+    public boolean isFull() {
+        return bullets.size() == capacity;
+    }
+
+    public boolean isEmpty() {
+        return bullets.isEmpty();
+    }
+
+    public boolean loadBullet(Bullet bullet) {
+        if (bullet == null || isFull() || bullet.getCaliber() != caliber) {
+            return false;
         }
+
+        bullets.push(bullet);
+        return true;
     }
 
-    public Bullet popBullet() {
-        return bullets.isEmpty() ? null : bullets.pop();
+    public boolean loadBullet(Caliber caliber) {
+        return loadBullet(new Bullet(caliber));
     }
 
-    public boolean isFull() { return bullets.size() == capacity; }
-    public boolean isEmpty() { return bullets.isEmpty(); }
-    public String getCaliber() { return caliber; }
+    public Bullet removeBullet() {
+        if (isEmpty()) {
+            return null;
+        }
+        return bullets.pop();
+    }
 }

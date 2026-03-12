@@ -1,77 +1,92 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import java.util.ArrayList;
-import java.util.List;
-
 public class Player {
-    private String name;
-    private IntegerProperty health = new SimpleIntegerProperty(100);
+    private final String name;
+    private int health = 100;
     private int lives = 3;
     private PlayerState currentState = PlayerState.IN_COVER;
-
-    private Gun currentGun;
-    private List<Magazine> vest = new ArrayList<>(); // Your "inventory"
+    private Gun equippedGun;
 
     public Player(String name) {
         this.name = name;
     }
 
-    // --- Duck & Peek System ---
+    public String getName() {
+        return name;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public PlayerState getCurrentState() {
+        return currentState;
+    }
+
+    public Gun getEquippedGun() {
+        return equippedGun;
+    }
+
     public void duck() {
-        this.currentState = PlayerState.IN_COVER;
-        System.out.println(name + " is safe behind cover.");
+        currentState = PlayerState.IN_COVER;
     }
 
     public void peek() {
-        this.currentState = PlayerState.AIMING;
-        System.out.println(name + " is popping out to shoot!");
+        currentState = PlayerState.AIMING;
     }
 
-    // --- Combat Logic ---
-    public void pullTrigger() {
-        if (currentState == PlayerState.IN_COVER) {
-            System.out.println("Can't shoot while in cover!");
+    public void equipGun(Gun gun) {
+        this.equippedGun = gun;
+    }
+
+    // compile-compat alias for existing controller usage
+    public void setGun(Gun gun) {
+        equipGun(gun);
+    }
+
+    public boolean reloadGun(Magazine magazine) {
+        if (equippedGun == null || magazine == null) {
+            return false;
+        }
+
+        Magazine old = equippedGun.ejectMagazine();
+        equippedGun.insertMagazine(magazine);
+        if (equippedGun.getMagazine() == magazine) {
+            return true;
+        }
+
+        if (old != null) {
+            equippedGun.insertMagazine(old);
+        }
+        return false;
+    }
+
+    public ShotResult pullTrigger(Target target) {
+        if (equippedGun == null || currentState == PlayerState.IN_COVER) {
+            return new ShotResult(false, false, true, 0, 0);
+        }
+        return equippedGun.shoot(target);
+    }
+
+    public void takeDamage(int amount) {
+        if (amount <= 0 || lives <= 0) {
             return;
         }
 
-        if (currentGun != null) {
-            currentGun.shoot();
-        } else {
-            System.out.println("No gun equipped!");
+        int applied = currentState == PlayerState.IN_COVER ? (int) Math.ceil(amount * 0.25) : amount;
+        health = Math.max(0, health - applied);
+
+        if (health == 0) {
+            lives--;
+            health = lives > 0 ? 100 : 0;
         }
     }
 
-    public void reloadGun() {
-        // Simple logic: find the first mag in the vest that matches the gun
-        for (Magazine mag : vest) {
-            if (mag.getCaliber().equals(currentGun.getRequiredCaliber())) {
-                Magazine oldMag = currentGun.ejectMag();
-                if (oldMag != null) vest.add(oldMag); // Keep the empty mag to refill later
-
-                currentGun.reload(mag);
-                vest.remove(mag);
-                return;
-            }
-        }
-        System.out.println("No matching ammo in vest!");
+    public boolean isAlive() {
+        return lives > 0;
     }
-
-    // --- Getters and Setters ---
-    public void takeDamage(int amount) {
-        if (currentState == PlayerState.AIMING) {
-            health.set(health.get() - amount);
-            if (health.get() <= 0) {
-                lives--;
-                health.set(100);
-                System.out.println("Life lost! Remaining: " + lives);
-            }
-        } else {
-            System.out.println("Blocked! Damage taken while in cover: 0");
-        }
-    }
-
-    public IntegerProperty healthProperty() { return health; }
-    public void setGun(Gun gun) { this.currentGun = gun; }
 }
