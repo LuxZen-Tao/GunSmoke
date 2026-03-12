@@ -66,7 +66,7 @@ public class Player {
     }
 
     public ShotResult pullTrigger(Target target) {
-        if (equippedGun == null || currentState == PlayerState.IN_COVER) {
+        if (equippedGun == null) {
             return new ShotResult(false, false, true, 0, 0);
         }
         return equippedGun.shoot(target);
