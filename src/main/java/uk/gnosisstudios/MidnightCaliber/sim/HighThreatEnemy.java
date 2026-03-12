@@ -7,6 +7,10 @@ public class HighThreatEnemy extends Enemy {
     public void onHit(int damage) {
         this.health -= damage;
         System.out.println("Enemy staggered!");
+        if (health <= 0) {
+            this.setVisible(false);
+            System.out.println("High-threat enemy neutralized.");
+        }
     }
 
     @Override

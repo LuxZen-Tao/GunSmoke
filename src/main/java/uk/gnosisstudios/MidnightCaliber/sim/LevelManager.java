@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LevelManager {
-    public void processPlayerShot(int damage) {
+    public boolean processPlayerShot(int damage) {
         for (Target t : activeTargets) {
             if (t.isVisible()) {
                 t.onHit(damage);
-                break;
+                return true;
             }
         }
+        return false;
     }
 
     public enum GameState { WAITING, IN_COMBAT, WAVE_CLEARED, GAME_OVER }
@@ -21,6 +22,12 @@ public class LevelManager {
     private Player player;
 
     public void setPlayer(Player p) { this.player = p; }
+
+    public void reset() {
+        this.currentWave = 1;
+        this.activeTargets = new ArrayList<>();
+        this.currentState = GameState.WAITING;
+    }
 
     public void startWave() {
         this.activeTargets = new ArrayList<>();
