@@ -2,25 +2,35 @@ package uk.gnosisstudios.MidnightCaliber.sim;
 
 public class SimDemo {
     public static void main(String[] args) {
-        Pistol pistol = new Pistol();
-        Magazine mag = new Magazine(6, Caliber.NINE_MM);
+        Player player = new Player("Rookie");
+        Gun pistol = new Pistol();
 
+        Magazine mag = new Magazine(6, Caliber.NINE_MM);
         while (!mag.isFull()) {
             mag.loadBullet(Caliber.NINE_MM);
         }
 
-        pistol.insertMagazine(mag);
+        player.equipGun(pistol);
+        player.reloadGun(mag);
 
-        Target target = new Target("Training Dummy", 120, false);
-        ShotResult result = pistol.shoot(target);
+        Target target = new StaticTarget(120);
 
-        System.out.println("Gun: " + pistol.getName());
-        System.out.println("Rounds fired: " + result.getRoundsFired());
-        System.out.println("Hit: " + result.isHit());
-        System.out.println("Jammed: " + result.isJammed());
-        System.out.println("Out of ammo: " + result.isOutOfAmmo());
-        System.out.println("Damage dealt: " + result.getDamage());
-        System.out.println("Target health: " + target.getHealth());
-        System.out.println("Remaining rounds: " + pistol.getMagazine().getBulletCount());
+        int ammoBefore = pistol.getMagazine() != null ? pistol.getMagazine().getBulletCount() : 0;
+        int healthBefore = target.getHealth();
+
+        ShotResult result = null;
+        for (int i = 0; i < 3 && target.isAlive(); i++) {
+            result = player.pullTrigger(target);
+            if (result.isHit() || result.isOutOfAmmo() || result.isJammed()) {
+                break;
+            }
+        }
+
+        int ammoAfter = pistol.getMagazine() != null ? pistol.getMagazine().getBulletCount() : 0;
+        int healthAfter = target.getHealth();
+
+        System.out.println("Shot result: " + result);
+        System.out.println("Target health: " + healthBefore + " -> " + healthAfter);
+        System.out.println("Ammo count: " + ammoBefore + " -> " + ammoAfter);
     }
 }
