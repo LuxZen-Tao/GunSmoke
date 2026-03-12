@@ -2,28 +2,26 @@ package uk.gnosisstudios.MidnightCaliber.sim;
 
 public class Pistol extends Gun {
     public Pistol() {
-        super("M9 Beretta", 0.02, FireMode.SEMI_AUTO); // 2% jam chance
+        super("M9 Beretta", Caliber.NINE_MM, 20, 35, 0.02, 0.8, FireMode.SEMI_AUTO);
     }
 
     @Override
-    public void shoot() {
-        if (loadedMag == null || loadedMag.isEmpty()) {
-            System.out.println(" *Click* ... Out of ammo!");
-            return;
+    public ShotResult shoot(Target target) {
+        if (!canShoot()) {
+            return new ShotResult(false, false, true, 0, 0);
         }
 
-        // Logic for Jamming (Basic Java Skill: Random)
-        if (Math.random() < jamChance) {
-            System.out.println("JAMMED! Eject the mag to clear.");
-            return;
+        if (isJammed()) {
+            return new ShotResult(false, true, false, 0, 0);
         }
 
-        loadedMag.popBullet();
-        System.out.println("BANG! Pistol fired.");
-    }
+        magazine.removeBullet();
+        boolean hit = target != null && target.isAlive() && rollHit();
+        int damage = hit ? rollDamage() : 0;
+        if (hit) {
+            target.takeDamage(damage);
+        }
 
-    @Override
-    public String getRequiredCaliber() {
-        return "9mm";
+        return new ShotResult(hit, false, false, damage, 1);
     }
 }

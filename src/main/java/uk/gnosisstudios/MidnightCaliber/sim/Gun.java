@@ -1,42 +1,95 @@
 package uk.gnosisstudios.MidnightCaliber.sim;
 
-public abstract class Gun {
-    protected String name;
-    protected Magazine loadedMag;
-    protected double jamChance; // e.g., 0.02 for 2%
-    protected FireMode fireMode;
+import java.util.Random;
 
-    public Gun(String name, double jamChance, FireMode fireMode) {
+public abstract class Gun {
+    protected final String name;
+    protected final Caliber caliber;
+    protected final int minDamage;
+    protected final int maxDamage;
+    protected final double jamChance;
+    protected final double accuracy;
+    protected Magazine magazine;
+    protected final FireMode fireMode;
+    protected final Random random = new Random();
+
+    protected Gun(String name, Caliber caliber, int minDamage, int maxDamage, double jamChance, double accuracy, FireMode fireMode) {
         this.name = name;
+        this.caliber = caliber;
+        this.minDamage = minDamage;
+        this.maxDamage = maxDamage;
         this.jamChance = jamChance;
+        this.accuracy = accuracy;
         this.fireMode = fireMode;
     }
 
-    // Abstract method: Every gun shoots differently!
-    public abstract void shoot();
+    public String getName() {
+        return name;
+    }
 
-    // Overloaded method: Shoot multiple times (Polymorphism)
-    public void shoot(int rounds) {
-        for (int i = 0; i < rounds; i++) {
-            shoot();
+    public Caliber getCaliber() {
+        return caliber;
+    }
+
+    public Magazine getMagazine() {
+        return magazine;
+    }
+
+    public boolean hasMagazine() {
+        return magazine != null;
+    }
+
+    public void insertMagazine(Magazine magazine) {
+        if (magazine == null || magazine.getCaliber() != caliber) {
+            return;
         }
+        this.magazine = magazine;
     }
 
-    public void reload(Magazine mag) {
-        if (mag.getCaliber().equals(this.getRequiredCaliber())) {
-            this.loadedMag = mag;
-            System.out.println(name + " reloaded.");
-        } else {
-            System.out.println("Wrong magazine caliber!");
+    public Magazine ejectMagazine() {
+        Magazine old = this.magazine;
+        this.magazine = null;
+        return old;
+    }
+
+    public boolean canShoot() {
+        return magazine != null && !magazine.isEmpty();
+    }
+
+    public boolean isJammed() {
+        return random.nextDouble() < jamChance;
+    }
+
+    public int rollDamage() {
+        if (maxDamage <= minDamage) {
+            return minDamage;
         }
+        return random.nextInt(maxDamage - minDamage + 1) + minDamage;
     }
 
-    public Magazine ejectMag() {
-        Magazine oldMag = this.loadedMag;
-        this.loadedMag = null;
-        return oldMag;
+    protected boolean rollHit() {
+        return random.nextDouble() <= accuracy;
     }
 
-    // Every specific gun must define its caliber
-    public abstract String getRequiredCaliber();
+    public abstract ShotResult shoot(Target target);
+
+    public ShotResult shoot(Target target, int rounds) {
+        int attempts = Math.max(0, rounds);
+        int totalDamage = 0;
+        int roundsFired = 0;
+        boolean hit = false;
+
+        for (int i = 0; i < attempts; i++) {
+            ShotResult result = shoot(target);
+            if (result.isOutOfAmmo() || result.isJammed()) {
+                return new ShotResult(hit, result.isJammed(), result.isOutOfAmmo(), totalDamage, roundsFired);
+            }
+
+            roundsFired += result.getRoundsFired();
+            totalDamage += result.getDamage();
+            hit = hit || result.isHit();
+        }
+
+        return new ShotResult(hit, false, false, totalDamage, roundsFired);
+    }
 }
