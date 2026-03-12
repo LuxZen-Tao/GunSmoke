@@ -91,6 +91,10 @@ public class LevelManager {
         return currentState;
     }
 
+    public int getCurrentWave() {
+        return currentWave;
+    }
+
     public List<Target> getActiveTargets() {
         return activeTargets;
     }

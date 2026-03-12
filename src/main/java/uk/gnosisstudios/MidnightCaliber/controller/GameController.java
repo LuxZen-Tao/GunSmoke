@@ -48,6 +48,17 @@ public class GameController {
             @Override
             public void handle(long now) {
                 levelManager.update();
+                syncHealthFromPlayer();
+
+                LevelManager.GameState state = levelManager.getCurrentState();
+                if (state == LevelManager.GameState.WAVE_CLEARED) {
+                    levelManager.startWave();
+                    gameView.showMessage("Wave " + levelManager.getCurrentWave() + " started!");
+                } else if (state == LevelManager.GameState.GAME_OVER) {
+                    gameLoop.stop();
+                    gameView.showMessage("Game Over! Final score: " + score);
+                }
+
                 gameView.update();
                 gameView.render();
             }
@@ -114,15 +125,17 @@ public class GameController {
 
         stage.setScene(gameView.getScene());
         stage.setTitle("Midnight Caliber - Game");
-        gameView.showMessage("Game started!");
+        gameView.showMessage("Wave " + levelManager.getCurrentWave() + " started!");
         gameView.updateScore(score);
         gameView.updateAmmo(ammo);
+        syncHealthFromPlayer();
         gameView.render();
         gameLoop.start();
     }
 
     private void resetStateForNewRun() {
         score = 0;
+        player.reset();
         levelManager.reset();
         reloadPlayerMagazine();
     }
@@ -134,19 +147,37 @@ public class GameController {
     }
 
     private void addScore() {
-        score += 10;
-        gameView.updateScore(score);
-        gameView.showMessage("Score increased!");
+        ShotResult result = levelManager.processPlayerShot();
+        syncAmmoFromPlayer();
+
+        if (result.isNoWeapon()) {
+            gameView.showMessage("No weapon equipped!");
+        } else if (result.isOutOfAmmo()) {
+            gameView.showMessage("Out of ammo! Reload!");
+        } else if (result.isJammed()) {
+            gameView.showMessage("Weapon jammed!");
+        } else if (result.isHit()) {
+            score += 10;
+            gameView.updateScore(score);
+            gameView.showMessage("Hit! (" + result.getDamage() + " damage)");
+            gameView.moveTargetRandomly();
+        } else {
+            gameView.showMessage("Missed!");
+        }
+
         gameView.render();
     }
 
     private void resetScore() {
         score = 0;
+        player.reset();
         levelManager.reset();
+        levelManager.startWave();
         reloadPlayerMagazine();
         gameView.updateScore(score);
         gameView.updateAmmo(ammo);
-        gameView.showMessage("Game reset!");
+        syncHealthFromPlayer();
+        gameView.showMessage("Wave " + levelManager.getCurrentWave() + " started!");
         gameView.render();
     }
 
@@ -183,5 +214,9 @@ public class GameController {
             ammo = 0;
         }
         gameView.updateAmmo(ammo);
+    }
+
+    private void syncHealthFromPlayer() {
+        gameView.updateHealth(player.getHealth(), player.getLives());
     }
 }
