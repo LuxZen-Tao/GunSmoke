@@ -1,35 +1,68 @@
 package uk.gnosisstudios.MidnightCaliber.controller;
 
-import javafx.stage.Stage;
-import uk.gnosisstudios.MidnightCaliber.UI.GameView;
-import uk.gnosisstudios.MidnightCaliber.UI.MainMenuView;
 import javafx.animation.AnimationTimer;
+import javafx.stage.Stage;
+import uk.gnosisstudios.MidnightCaliber.sim.*;
+import uk.gnosisstudios.MidnightCaliber.UI.*;
 
 public class GameController {
-
     private Stage stage;
     private MainMenuView mainMenuView;
     private GameView gameView;
     private AnimationTimer gameLoop;
 
-    private int score = 0;
-    private int ammo = 6;
-    private final int maxAmmo = 6;
+    // Logic Model components
+    private Player player;
+    private LevelManager levelManager;
 
     public GameController(Stage stage, MainMenuView mainMenuView, GameView gameView) {
         this.stage = stage;
         this.mainMenuView = mainMenuView;
         this.gameView = gameView;
 
+        // Initialize your simulation model
+        this.player = new Player("Operator");
+        this.player.setGun(new Pistol()); // Default equipped gun
+        this.levelManager = new LevelManager();
+
         wireEvents();
+        setupLoop();
+    }
+
+    private void setupLoop() {
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                gameView.update();
+                // Update the level logic
+                levelManager.update();
+
+                // Keep the UI in sync with the model
                 gameView.render();
             }
         };
+    }
 
+    private void handleCanvasClick(double mouseX, double mouseY) {
+        // Now using the real shooting logic
+        player.pullTrigger();
+
+        // Check for hits via the LevelManager
+        if (gameView.isTargetHit(mouseX, mouseY)) {
+            levelManager.processPlayerShot(10); // Standard damage
+            gameView.showMessage("Target Hit!");
+        } else {
+            gameView.showMessage("Miss!");
+        }
+    }
+
+    private void reloadAction() {
+        player.reloadGun();
+        gameView.showMessage("Reloading...");
+    }
+
+    private void startGame() {
+        stage.setScene(gameView.getScene());
+        gameLoop.start();
     }
 
     private void wireEvents() {

@@ -9,3 +9,4 @@ public abstract class Target {
     public void setVisible(boolean visible) { this.isVisible = visible; }
     public boolean isVisible() { return isVisible; }
 }
+

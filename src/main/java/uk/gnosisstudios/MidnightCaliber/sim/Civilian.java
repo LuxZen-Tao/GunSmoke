@@ -7,3 +7,5 @@ public class Civilian extends Target {
         this.setVisible(false); // They run away
     }
 }
+
+
