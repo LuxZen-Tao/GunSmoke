@@ -29,14 +29,37 @@ public class LevelManager {
         currentState = GameState.IN_COMBAT;
     }
 
+    public ShotResult processPlayerShot() {
+        if (player == null) {
+            return ShotResult.noWeapon();
+        }
+
+        Target target = getFirstAliveTarget();
+        return player.pullTrigger(target);
+    }
+
+    // compatibility helper for legacy UI flow
     public boolean processPlayerShot(int damage) {
+        if (damage <= 0) {
+            return false;
+        }
+
+        Target target = getFirstAliveTarget();
+        if (target == null) {
+            return false;
+        }
+
+        target.takeDamage(damage);
+        return true;
+    }
+
+    private Target getFirstAliveTarget() {
         for (Target target : activeTargets) {
             if (target.isAlive()) {
-                target.takeDamage(damage);
-                return true;
+                return target;
             }
         }
-        return false;
+        return null;
     }
 
     public void update() {

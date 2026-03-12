@@ -7,8 +7,8 @@ public class Civilian extends Target {
 
     @Override
     public void takeDamage(int damage) {
-        if (damage > 0) {
-            super.takeDamage(getHealth(), 1.0);
+        if (damage > 0 && isAlive()) {
+            super.takeDamage(getHealth());
         }
     }
 }

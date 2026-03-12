@@ -6,23 +6,12 @@ public class Shotgun extends Gun {
     }
 
     @Override
+    protected int adjustDamage(Target target, int baseDamage) {
+        return (int) Math.round(baseDamage * 1.2);
+    }
+
+    @Override
     public ShotResult shoot(Target target) {
-        if (!canShoot()) {
-            return new ShotResult(false, false, true, 0, 0);
-        }
-
-        if (isJammed()) {
-            return new ShotResult(false, true, false, 0, 0);
-        }
-
-        magazine.removeBullet();
-        boolean hit = target != null && target.isAlive() && rollHit();
-        int damage = hit ? rollDamage() : 0;
-        if (hit) {
-            target.takeDamage(damage, 1.2);
-            damage = (int) Math.round(damage * 1.2);
-        }
-
-        return new ShotResult(hit, false, false, damage, 1);
+        return super.shoot(target);
     }
 }

@@ -31,6 +31,10 @@ public abstract class Gun {
         return caliber;
     }
 
+    public FireMode getFireMode() {
+        return fireMode;
+    }
+
     public Magazine getMagazine() {
         return magazine;
     }
@@ -53,7 +57,7 @@ public abstract class Gun {
     }
 
     public boolean canShoot() {
-        return magazine != null && !magazine.isEmpty();
+        return hasMagazine() && !magazine.isEmpty();
     }
 
     public boolean isJammed() {
@@ -71,7 +75,13 @@ public abstract class Gun {
         return random.nextDouble() <= accuracy;
     }
 
-    public abstract ShotResult shoot(Target target);
+    protected int adjustDamage(Target target, int baseDamage) {
+        return baseDamage;
+    }
+
+    public ShotResult shoot(Target target) {
+        return shoot(target, 1);
+    }
 
     public ShotResult shoot(Target target, int rounds) {
         int attempts = Math.max(0, rounds);
@@ -80,14 +90,28 @@ public abstract class Gun {
         boolean hit = false;
 
         for (int i = 0; i < attempts; i++) {
-            ShotResult result = shoot(target);
-            if (result.isOutOfAmmo() || result.isJammed()) {
-                return new ShotResult(hit, result.isJammed(), result.isOutOfAmmo(), totalDamage, roundsFired);
+            if (!canShoot()) {
+                return new ShotResult(hit, false, true, totalDamage, roundsFired);
             }
 
-            roundsFired += result.getRoundsFired();
-            totalDamage += result.getDamage();
-            hit = hit || result.isHit();
+            if (isJammed()) {
+                return new ShotResult(hit, true, false, totalDamage, roundsFired);
+            }
+
+            magazine.removeBullet();
+            roundsFired++;
+
+            boolean roundHit = target != null && target.isAlive() && rollHit();
+            if (roundHit) {
+                int damage = adjustDamage(target, rollDamage());
+                target.takeDamage(damage);
+                totalDamage += damage;
+                hit = true;
+            }
+
+            if (target != null && !target.isAlive()) {
+                break;
+            }
         }
 
         return new ShotResult(hit, false, false, totalDamage, roundsFired);

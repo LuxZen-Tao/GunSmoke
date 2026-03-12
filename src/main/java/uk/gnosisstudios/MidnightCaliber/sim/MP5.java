@@ -7,35 +7,12 @@ public class MP5 extends Gun {
 
     @Override
     public ShotResult shoot(Target target) {
-        return shoot(target, 1);
+        return super.shoot(target, 3);
     }
 
     @Override
     public ShotResult shoot(Target target, int rounds) {
         int burst = Math.min(Math.max(1, rounds), 5);
-        int totalDamage = 0;
-        int roundsFired = 0;
-        boolean hit = false;
-
-        for (int i = 0; i < burst; i++) {
-            if (!canShoot()) {
-                return new ShotResult(hit, false, roundsFired == 0, totalDamage, roundsFired);
-            }
-            if (isJammed()) {
-                return new ShotResult(hit, true, false, totalDamage, roundsFired);
-            }
-
-            magazine.removeBullet();
-            roundsFired++;
-            boolean roundHit = target != null && target.isAlive() && rollHit();
-            if (roundHit) {
-                int damage = rollDamage();
-                totalDamage += damage;
-                hit = true;
-                target.takeDamage(damage);
-            }
-        }
-
-        return new ShotResult(hit, false, false, totalDamage, roundsFired);
+        return super.shoot(target, burst);
     }
 }
