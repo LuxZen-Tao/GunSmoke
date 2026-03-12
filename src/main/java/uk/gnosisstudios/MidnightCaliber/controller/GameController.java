@@ -15,6 +15,11 @@ public class GameController {
     private Player player;
     private LevelManager levelManager;
 
+    // Game state
+    private int score = 0;
+    private int maxAmmo = 6;
+    private int ammo = maxAmmo;
+
     public GameController(Stage stage, MainMenuView mainMenuView, GameView gameView) {
         this.stage = stage;
         this.mainMenuView = mainMenuView;
@@ -24,6 +29,7 @@ public class GameController {
         this.player = new Player("Operator");
         this.player.setGun(new Pistol()); // Default equipped gun
         this.levelManager = new LevelManager();
+        this.levelManager.setPlayer(player);
 
         wireEvents();
         setupLoop();
@@ -36,33 +42,13 @@ public class GameController {
                 // Update the level logic
                 levelManager.update();
 
+                // Update target positions
+                gameView.update();
+
                 // Keep the UI in sync with the model
                 gameView.render();
             }
         };
-    }
-
-    private void handleCanvasClick(double mouseX, double mouseY) {
-        // Now using the real shooting logic
-        player.pullTrigger();
-
-        // Check for hits via the LevelManager
-        if (gameView.isTargetHit(mouseX, mouseY)) {
-            levelManager.processPlayerShot(10); // Standard damage
-            gameView.showMessage("Target Hit!");
-        } else {
-            gameView.showMessage("Miss!");
-        }
-    }
-
-    private void reloadAction() {
-        player.reloadGun();
-        gameView.showMessage("Reloading...");
-    }
-
-    private void startGame() {
-        stage.setScene(gameView.getScene());
-        gameLoop.start();
     }
 
     private void wireEvents() {
