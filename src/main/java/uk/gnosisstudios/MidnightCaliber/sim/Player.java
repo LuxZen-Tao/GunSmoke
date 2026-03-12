@@ -48,6 +48,12 @@ public class Player {
         equipGun(gun);
     }
 
+    public void reset() {
+        health = 100;
+        lives = 3;
+        currentState = PlayerState.IN_COVER;
+    }
+
     public boolean reloadGun(Magazine magazine) {
         if (equippedGun == null || magazine == null) {
             return false;

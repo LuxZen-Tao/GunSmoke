@@ -26,10 +26,11 @@ public class GameView {
     Label scoreLabel = new Label("Score: 0");
     Label gameAreaLabel = new Label("Behind the bar");
     Label ammoLabel = new Label("Ammo: 6");
+    Label healthLabel = new Label("HP: 100  Lives: 3");
     Button reloadButton = new Button("Reload");
 
-    Button scoreAddButton = new Button("Add Score");
-    Button resetScoreButton = new Button("Reset Score");
+    Button scoreAddButton = new Button("Fire");
+    Button resetScoreButton = new Button("Restart");
     Button mainMenuButton = new Button("Main Menu");
 
     private Canvas canvas = new Canvas(500, 250);
@@ -58,7 +59,7 @@ public class GameView {
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        topBar.getChildren().addAll(titleLabel, spacer, scoreLabel, ammoLabel);
+        topBar.getChildren().addAll(titleLabel, spacer, scoreLabel, ammoLabel, healthLabel);
         VBox centerBox = new VBox();
         centerBox.setAlignment(Pos.CENTER);
         centerBox.setSpacing(10);
@@ -118,6 +119,10 @@ public class GameView {
 
     public void updateAmmo(int ammo) {
         ammoLabel.setText("Ammo: " + ammo);
+    }
+
+    public void updateHealth(int health, int lives) {
+        healthLabel.setText("HP: " + health + "  Lives: " + lives);
     }
 
     public void render() {
