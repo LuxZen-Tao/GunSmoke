@@ -21,7 +21,6 @@ public class GameController {
     // Logic Model components
     private final Player player;
     private final LevelManager levelManager;
-    private final Target trainingTarget = new Target("Range Target", 100_000, false);
 
     // Game state
     private int score = 0;
@@ -50,9 +49,13 @@ public class GameController {
                 levelManager.update();
                 syncHealthFromPlayer();
 
+                // Sync sim entities to the view so the renderer reflects current state
+                gameView.setActiveTargets(levelManager.getActiveTargets());
+
                 LevelManager.GameState state = levelManager.getCurrentState();
                 if (state == LevelManager.GameState.WAVE_CLEARED) {
                     levelManager.startWave();
+                    gameView.setActiveTargets(levelManager.getActiveTargets());
                     gameView.showMessage("Wave " + levelManager.getCurrentWave() + " started!");
                 } else if (state == LevelManager.GameState.GAME_OVER) {
                     gameLoop.stop();
@@ -85,8 +88,9 @@ public class GameController {
             return;
         }
 
-        boolean hitViewTarget = gameView.isTargetHit(mouseX, mouseY);
-        ShotResult shotResult = player.pullTrigger(hitViewTarget ? trainingTarget : null);
+        // Find the sim target whose rendered square was clicked (null = open air)
+        Target clickedTarget = gameView.getTargetAt(mouseX, mouseY);
+        ShotResult shotResult = player.pullTrigger(clickedTarget);
         syncAmmoFromPlayer();
 
         if (shotResult.isOutOfAmmo()) {
@@ -101,12 +105,10 @@ public class GameController {
             return;
         }
 
-        boolean hitSimTarget = shotResult.isHit() && levelManager.processPlayerShot(shotResult.getDamage());
-        if (hitViewTarget && hitSimTarget) {
+        if (shotResult.isHit()) {
             score += 10;
             gameView.updateScore(score);
-            gameView.showMessage("Hit!");
-            gameView.moveTargetRandomly();
+            gameView.showMessage("Hit! (" + shotResult.getDamage() + " damage)");
         } else {
             gameView.showMessage("Miss!");
         }
@@ -122,6 +124,7 @@ public class GameController {
     private void startGame() {
         resetStateForNewRun();
         levelManager.startWave();
+        gameView.setActiveTargets(levelManager.getActiveTargets());
 
         stage.setScene(gameView.getScene());
         stage.setTitle("Midnight Caliber - Game");
@@ -160,7 +163,6 @@ public class GameController {
             score += 10;
             gameView.updateScore(score);
             gameView.showMessage("Hit! (" + result.getDamage() + " damage)");
-            gameView.moveTargetRandomly();
         } else {
             gameView.showMessage("Missed!");
         }
@@ -173,6 +175,7 @@ public class GameController {
         player.reset();
         levelManager.reset();
         levelManager.startWave();
+        gameView.setActiveTargets(levelManager.getActiveTargets());
         reloadPlayerMagazine();
         gameView.updateScore(score);
         gameView.updateAmmo(ammo);
